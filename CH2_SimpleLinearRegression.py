@@ -7,10 +7,19 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.16.1
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3.13.11 (Conda)
 #     language: python
-#     name: python3
+#     name: py313
 # ---
+
+# %%
+import sys
+print(sys.version)
+print(sys.executable)
+
+# %%
+import scipy
+print(scipy.__version__)
 
 # %%
 import numpy as np
@@ -29,7 +38,7 @@ from sklearn.linear_model import LinearRegression
 # spatial regression package. 
 # I like the way its output looks like,
 # compared to statsmodels
-from pysal.model import spreg
+# import spreg
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -38,7 +47,7 @@ import matplotlib.pyplot as plt
 database = "/Users/hn/Documents/01_research_data/Montgomery/"
 
 # %% [markdown]
-# ### Question 1
+# # Question 1
 
 # %%
 B1_NFL1976 = pd.read_csv(database + "B1_NFL1976.csv")
@@ -108,8 +117,6 @@ RSS = anova_table.loc["Residual", "sum_sq"]
 # pred = result_smf.get_prediction(new_data)
 # ci = pred.summary_frame(alpha=0.05)
 # ```
-#
-#
 
 # %% [markdown]
 # ## Lets stick to ```smf```
@@ -165,16 +172,19 @@ result_smf.conf_int()
 # %%
 degr_of_fr = len(B1_NFL1976)-2
 
-x_mean = B1_NFL1976["opp_rushing_yard"].mean()
-S_xx = sum((B1_NFL1976["opp_rushing_yard"] - x_mean)**2)
+x = "opp_rushing_yard"
+x_mean = B1_NFL1976[x].mean()
+S_xx = sum((B1_NFL1976[x] - x_mean)**2)
 
 SE_B1 = np.sqrt(RSS / (degr_of_fr * S_xx))
-slope = result.params["opp_rushing_yard"]
+slope = result.params[x]
 
 alpha_95 = stats.t.ppf(0.975, df=degr_of_fr)
 alpha_95
 
-[slope - alpha_95 * SE_B1, slope + alpha_95 * SE_B1] 
+low = float(slope - alpha_95 * SE_B1)
+hi = float(slope + alpha_95 * SE_B1)
+[round(low, 4), round(hi, 4)]
 
 # %%
 
@@ -238,7 +248,7 @@ upper_CI_y2000 = round(yhat_2000 + alpha_SE, 3)
 [lower_CI_y2000, upper_CI_y2000]
 
 # %% [markdown]
-# #### Problem 2. Prediction interval. 
+# # Question 2. Prediction interval. 
 #
 # They are asking at 90\% significance level.
 #
@@ -284,6 +294,7 @@ ybar = y.mean()
 x = Rocket_propellant["Age of propellant"]
 xbar= x.mean()
 
+
 # %%
 sum((y - ybar) * (x - xbar))
 
@@ -294,9 +305,10 @@ sum(y * (x - xbar))
 sum(ybar * (xbar - x))
 
 # %%
+del(x)
 
 # %% [markdown]
-# ## Question 2.3
+# # Question 2.3
 #
 # The text in question says $x_4$ is radial deflection of the deflected rays but the text under that table in Appendix says differently (position of focal point in north direction.)
 #
@@ -418,10 +430,10 @@ upper_CI_y165 = round(yhat_165 + alpha_95_SE, 3)
 [lower_CI_y165, upper_CI_y165]
 
 # %% [markdown]
-# ## Question 2.4
+# # Question 2.4
 
 # %%
-mpg_df = pd.read_csv(database + "TableB3_gasoline_mileage.csv")
+mpg_df = pd.read_csv(database + "B3_gasoline_mileage.csv")
 
 mpg_df = mpg_df.rename(columns={"y" : "mpg", 
                                 'x1': "engine_displacement",
@@ -487,11 +499,12 @@ mpg_result.conf_int(alpha=0.01)
 degr_of_fr = len(mpg_df) - 2
 alpha_99 = stats.t.ppf(0.995, df=degr_of_fr)
 
-S_xx = sum((mpg_df["engine_displacement"] - mpg_df["engine_displacement"].mean())**2)
+x = "engine_displacement"
+S_xx = sum((mpg_df[x] - mpg_df[x].mean())**2)
 SE_slope = np.sqrt(rss / (degr_of_fr * S_xx))
 SE_slope
 
-slope = mpg_result.params['engine_displacement']
+slope = mpg_result.params[x]
 low_CI = slope - alpha_99 * SE_slope
 hi_CI = slope + alpha_99 * SE_slope
 
@@ -517,7 +530,7 @@ print (mpg_result.rsquared.round(3))
 
 # %%
 x0 = 275
-new_data = pd.DataFrame({"engine_displacement": [x0]})
+new_data = pd.DataFrame({x: [x0]})
 yhat_tbl = mpg_result.get_prediction(new_data)
 ci = yhat_tbl.summary_frame(alpha=0.05)
 ci
@@ -526,7 +539,7 @@ ci
 yhat = yhat_tbl.predicted_mean[0]
 
 # %%
-x_mean = mpg_df["engine_displacement"].mean()
+x_mean = mpg_df[x].mean()
 alpha_95 = stats.t.ppf(0.975, df=degr_of_fr)
 
 MS_res = rss / degr_of_fr
@@ -542,7 +555,7 @@ hi_CI = yhat + alpha_95*SE_CI_pred
 #
 # Model like so
 #
-# ```
+# ```python
 # mpg_model = smf.ols('mpg ~ engine_displacement', data = mpg_df)
 # mpg_result = mpg_model.fit()
 # ```
@@ -571,14 +584,123 @@ print (yhat_tbl.predicted_mean)
 yhat_tbl.summary_frame()
 
 # %% [markdown]
-# ## Part e and f 
+# ### Part e and f 
 #
 # are similar to earlier problem. Do them when you like
 
 # %%
 
-# %%
+# %% [markdown]
+# # Question 2.5
+#
+# Repeat 2.4 but use $x_{10}$ (vehicle weight) as regression
 
 # %%
+mpg_df.head(2)
+
+# %%
+mpg_weight_model = smf.ols('mpg ~ weight', data = mpg_df)
+mpg_weight_result = mpg_weight_model.fit()
+mpg_weight_result.summary()
+
+# %%
+print (f"Displacement model has R2 of {float(mpg_result.rsquared.round(3))}")
+print (f"Weight model has R2 of {float(mpg_weight_result.rsquared.round(3))}")
+
+# %%
+mpg_weight_anova_tbl = sm.stats.anova_lm(mpg_weight_result, typ=2)
+mpg_weight_anova_tbl
+
+# %%
+mpg_anova_tbl
+
+# %% [markdown]
+# # Question 2.6
+#
+#   - **a.** Fit a simple linear regression model relating selling price of the house to
+# the current taxes ($x_1$).
+#   - **b.** Test for significance of regression.
+#   - **c.** What percent of the total variability in selling price is explained by this model?
+#   - **d.** Find a 95% CI on $\hat \beta_1$ .
+#   - **e.** Find a 95% CI on the mean selling price of a house for which the current taxes are $750.
+
+# %%
+house_prices = pd.read_csv(database + "B4_house_prices.csv")
+house_prices.head(2)
+
+# %%
+house_on_tax_model = smf.ols('sale_price_div1000 ~ taxes_div1000', data = house_prices)
+house_on_tax_result = house_on_tax_model.fit()
+house_on_tax_result.summary()
+
+# %%
+house_on_tax_anova = sm.stats.anova_lm(house_on_tax_result, typ=2)
+house_on_tax_anova
+
+# %% [markdown]
+# **Recall** that in simple linear regression $t^2 = 8.518^2 = F = 72.55$
+#
+# - The t-statistic tests an individual regression coefficient. $t = \frac{\hat \beta_1}{\text{SE}(\hat \beta_1)}$
+# - F-statistics tests the overall significance of the regression model. $F=\frac{\text{SSR}/1}{\text{SST}/(n-2)}$
+
+# %%
+print (fr"Variability explained by the model is R^2={float(house_on_tax_result.rsquared.round(3))}")
+
+# %%
+house_on_tax_result.bse # Beta Standard Error
+
+# %% [markdown]
+# Compute standard error manually and check.
+
+# %%
+SE_slope = float(house_on_tax_result.bse["taxes_div1000"].round(3))
+SE_slope
+
+# %%
+RSS = float(house_on_tax_anova.sum_sq["Residual"].round(5))
+RSS
+
+# %%
+dg_freedom = len(house_prices) - 2
+
+x_ = "taxes_div1000"
+x_mean = house_prices[x_].mean()
+S_xx = sum((house_prices[x_] - x_mean)**2)
+
+SE_B1 = np.sqrt(RSS / (dg_freedom * S_xx))
+slope = house_on_tax_result.params[x_]
+
+float(SE_B1.round(3))
+
+# %%
+alpha_95 = stats.t.ppf(0.975, df=dg_freedom)
+low = float(slope - alpha_95 * SE_slope)
+hi = float(slope + alpha_95 * SE_slope)
+[round(low, 2), round(hi, 2)] 
+
+# %%
+# CI at x = 750
+x0 = 750
+new_data = pd.DataFrame({x_: [x0]})
+pred = house_on_tax_result.get_prediction(new_data)
+ci = pred.summary_frame(alpha=0.1)
+ci
+
+# %%
+# Manual CI at x = 750
+yhat0 = float(pred.summary_frame()["mean"][0])
+yhat0
+
+# %%
+x_mean = house_prices[x_].mean()
+SE = np.sqrt(RSS / dg_freedom * (1/(dg_freedom+2) + ((x0 - x_mean)**2/S_xx)))
+SE = float(SE)
+low = float(yhat0 - alpha_95 * SE)
+hi = float(yhat0 + alpha_95 * SE)
+
+[round(low, 2), round(low, 2)]
+
+# %%
+low
 
 # %%
